@@ -6,17 +6,20 @@ import 'package:firebase_redux_sync/redux/app_state.dart';
 import 'package:redux_epics/redux_epics.dart';
 import 'package:rxdart/rxdart.dart';
 
-final allEpics = combineEpics<AppState>([counterEpic, incrementEpic]);
+final allEpics = combineEpics<AppState>([counterEpic, incrementEpic()]);
 
-Stream<dynamic> incrementEpic(Stream<dynamic> actions, EpicStore<AppState> store) {
-  return new Observable(actions)
-      .ofType(new TypeToken<IncrementCounterAction>())
-      .switchMap((_) {
-    return new Observable.fromFuture(Firestore.instance.document("users/tudor")
-        .updateData({'counter': store.state.counter + 1})
-        .then((_) => new CounterDataPushedAction())
-        .catchError((error) => new CounterOnErrorEventAction(error)));
-  });
+Epic<AppState> incrementEpic({Firestore firestore}) {
+  firestore = firestore ?? Firestore.instance;
+  return (Stream<dynamic> actions, EpicStore<AppState> store) {
+    return new Observable(actions)
+        .ofType(new TypeToken<IncrementCounterAction>())
+        .flatMap((_) {
+      return new Observable.fromFuture(firestore.document("users/tudor")
+          .updateData({'counter': store.state.counter + 1}))
+          .map<dynamic>((_) => CounterDataPushedAction())
+          .onErrorReturnWith((e) => CounterOnErrorEventAction(e));
+    });
+  };
 }
 
 Stream<dynamic> counterEpic(Stream<dynamic> actions, EpicStore<AppState> store) {

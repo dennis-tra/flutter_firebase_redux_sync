@@ -1,6 +1,11 @@
 class IncrementCounterAction {}
 
-class CounterDataPushedAction {}
+class CounterDataPushedAction {
+  @override
+  bool operator ==(dynamic other) {
+    return other.runtimeType == runtimeType;
+  }
+}
 
 class RequestCounterDataEventsAction {}
 
@@ -21,5 +26,13 @@ class CounterOnErrorEventAction {
   CounterOnErrorEventAction(this.error);
 
   @override
-  String toString() => 'CounterOnErrorEventAction{error: $error}';
+  bool operator ==(dynamic other) {
+    if (other is CounterOnErrorEventAction) {
+      return other.error == this.error;
+    }
+    return false;
+  }
+
+  @override
+  int get hashCode => super.hashCode ^ error.hashCode;
 }
