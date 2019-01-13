@@ -17,7 +17,8 @@ Epic<AppState> incrementEpic({Firestore firestore}) {
       return new Observable.fromFuture(firestore.document("users/tudor")
           .updateData({'counter': store.state.counter + 1}))
           .map<dynamic>((_) => CounterDataPushedAction())
-          .onErrorReturnWith((e) => CounterOnErrorEventAction(e));
+          .onErrorReturnWith((e) => CounterOnErrorEventAction(e))
+          .takeUntil(actions.where((action) => action is CancelIncrementCounterAction));
     });
   };
 }

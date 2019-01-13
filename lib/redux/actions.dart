@@ -1,4 +1,5 @@
 class IncrementCounterAction {}
+class CancelIncrementCounterAction {}
 
 class CounterDataPushedAction {
   @override

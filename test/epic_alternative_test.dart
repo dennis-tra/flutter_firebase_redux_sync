@@ -102,6 +102,51 @@ main() {
         CounterOnErrorEventAction(error2),
       ]));
     });
+
+    test('can cancel increment epic action', () async {
+      // given
+      final store = Store<AppState>(null, initialState: AppState(counter: 0) );
+      final epic = incrementEpic(firestore: firestore)(actions.stream, EpicStore(store));
+      final data = {"counter": 1};
+      final error1 = "ERROR_1";
+      final error2 = "ERROR_2";
+
+      // when
+      when(firestore.document("users/tudor")).thenReturn(docRef);
+
+      scheduleMicrotask(() async {
+        when(docRef.updateData(data)).thenAnswer((_) => Future.delayed(Duration(milliseconds: 200)));
+        actions.add(IncrementCounterAction());
+        await untilCalled(docRef.updateData(data));
+
+        actions.add(CancelIncrementCounterAction());
+
+        when(docRef.updateData(data)).thenAnswer((a) => Future.error(error1));
+        actions.add(IncrementCounterAction());
+        await untilCalled(docRef.updateData(data));
+
+        when(docRef.updateData(data)).thenAnswer((_) => Future.delayed(Duration(milliseconds: 200)));
+        actions.add(IncrementCounterAction());
+        await untilCalled(docRef.updateData(data));
+
+        actions.add(CancelIncrementCounterAction());
+
+        when(docRef.updateData(data)).thenAnswer((a) => Future.error(error2));
+        actions.add(IncrementCounterAction());
+        await untilCalled(docRef.updateData(data));
+
+        when(docRef.updateData(data)).thenAnswer((_) => Future.delayed(Duration(milliseconds: 200)));
+        actions.add(IncrementCounterAction());
+        await untilCalled(docRef.updateData(data));
+      });
+
+      // then
+      await expectLater(epic, emitsInOrder([
+        CounterOnErrorEventAction(error1),
+        CounterOnErrorEventAction(error2),
+        CounterDataPushedAction(),
+      ]));
+    });
   });
 }
 
